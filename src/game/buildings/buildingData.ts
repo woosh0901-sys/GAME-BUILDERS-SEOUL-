@@ -1,0 +1,5 @@
+import type { BuildingId } from '../../types/game'
+export interface BuildingDefinition { id: BuildingId; name: string; months: number; cost: number; effect: string; requires?: keyof import('../../types/game').ResourceProduction }
+export const buildings: BuildingDefinition[] = [
+  { id: 'civilian_factory', name: '민간 공장', months: 6, cost: 500, effect: 'GDP와 건설 능력 증가' }, { id: 'military_factory', name: '군수 공장', months: 8, cost: 700, effect: '군수 생산 증가' }, { id: 'research_lab', name: '연구소', months: 10, cost: 800, effect: '연구 속도 증가' }, { id: 'university', name: '대학', months: 12, cost: 650, effect: '연구 포인트 증가' }, { id: 'mine', name: '광산', months: 8, cost: 550, effect: '지역 자원 생산 증가' }, { id: 'oil_refinery', name: '정유 시설', months: 10, cost: 750, effect: '석유 생산 효율 증가', requires: 'oil' }, { id: 'port', name: '항만', months: 12, cost: 900, effect: '무역과 해군 생산 증가' }, { id: 'airport', name: '공항', months: 8, cost: 700, effect: '공군 효율 증가' }, { id: 'railway', name: '철도', months: 7, cost: 450, effect: '인프라 증가' }, { id: 'fort', name: '요새', months: 6, cost: 600, effect: '지역 방어력 증가' },
+]

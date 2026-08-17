@@ -1,0 +1,3 @@
+import type { MilitaryUnit, RegionState } from '../../types/game'
+import { unitPower } from './unitEngine'
+export function resolveCombat(attacker: MilitaryUnit[], defender: MilitaryUnit[], region?: RegionState) { const terrain = region?.name.includes('산') ? 0.85 : region?.capital ? 0.9 : 1; const attack = attacker.reduce((sum, unit) => sum + unitPower(unit, 1, terrain), 0) * (0.9 + Math.random() * 0.2); const defense = defender.reduce((sum, unit) => sum + unitPower(unit, 1, 1.05), 0) * (0.9 + Math.random() * 0.2); const attackerWon = attack > defense * 1.08; const defenderWon = defense > attack * 1.08; return { result: attackerWon ? '공격 승리' : defenderWon ? '방어 승리' : '교착', attack, defense } }

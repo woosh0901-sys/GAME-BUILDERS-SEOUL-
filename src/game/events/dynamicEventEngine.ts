@@ -1,0 +1,25 @@
+import type { Country, DynamicEvent, EventEffect, EventHistoryRecord } from '../../types/game'
+
+const clamp = (value: number, min = 0, max = 100) => Math.max(min, Math.min(max, value))
+
+export function generateDynamicEvent(country: Country, turn: number, existing: DynamicEvent[]): DynamicEvent | null {
+  const hasRecent = (id: string) => existing.some((event) => event.id === id && event.availableTurn > turn - 12)
+  if (country.unemployment > 10 && country.gdpGrowth < 0 && !hasRecent('economic-downturn')) return { id: 'economic-downturn', title: '경제 침체의 확산', description: `${country.name}에서 생산과 고용이 동시에 위축되고 있습니다. 정부의 대응이 필요합니다.`, category: '경제', importance: 4, cause: [`실업률 ${country.unemployment.toFixed(1)}%`, `경제 성장률 ${country.gdpGrowth.toFixed(1)}%`], scope: '국가', availableTurn: turn, cooldown: 12, chainDepth: 0, options: [{ id: 'stimulus', label: '긴급 경기부양', description: '재정을 투입해 수요와 고용을 지지합니다.', effects: { treasury: -80, gdpGrowth: 0.8, approval: 3 }, followUp: { id: 'stimulus-result', delay: 3, title: '경기부양의 결과', description: '긴급 경기부양 정책의 효과가 나타나기 시작했습니다.', category: '경제' } }, { id: 'welfare', label: '실업보험 확대', description: '가계 충격을 줄이지만 재정 부담이 커집니다.', effects: { treasury: -45, socialUnrest: -5, approval: 4 }, followUp: { id: 'welfare-result', delay: 4, title: '사회안전망 평가', description: '실업보험 확대가 사회 안정에 미친 영향을 평가합니다.', category: '사회' } }, { id: 'austerity', label: '긴축 유지', description: '재정을 지키지만 단기 불만이 커질 수 있습니다.', effects: { treasury: 30, approval: -4, socialUnrest: 4, gdpGrowth: -0.3 } }] }
+  if ((country.socialState?.socialUnrest ?? 0) > 55 && !hasRecent('social-unrest')) return { id: 'social-unrest', title: '사회 불안의 확산', description: '여러 사회 세력이 정부의 대응을 요구하며 거리와 의회에서 목소리를 높이고 있습니다.', category: '사회', importance: 3, cause: [`사회 불안 ${(country.socialState?.socialUnrest ?? 0).toFixed(0)}`, `정부 지지율 ${(country.domesticPolitics?.governmentApproval ?? country.stability).toFixed(0)}%`], scope: '국가', availableTurn: turn, cooldown: 10, chainDepth: 0, options: [{ id: 'negotiate', label: '사회적 대화 개최', description: '정치적 비용을 감수하고 타협을 시도합니다.', effects: { stability: 2, socialUnrest: -8, approval: 2 } }, { id: 'security', label: '질서 유지 강화', description: '단기 질서를 확보하지만 장기 신뢰가 낮아질 수 있습니다.', effects: { stability: 1, socialUnrest: 3, approval: -3 } }] }
+  if ((country.technologyState?.utilization ?? 0) > 65 && !hasRecent('technology-breakthrough')) return { id: 'technology-breakthrough', title: '기술 돌파구', description: `${country.name}의 연구기관에서 새로운 기술 적용 가능성이 확인되었습니다.`, category: '기술', importance: 3, cause: [`기술 활용도 ${(country.technologyState?.utilization ?? 0).toFixed(0)}%`, `연구 역량 ${(country.technologyState?.researchCapacity ?? 0).toFixed(0)}`], scope: '국가', availableTurn: turn, cooldown: 18, chainDepth: 0, options: [{ id: 'commercialize', label: '즉시 상용화', description: '산업 적용을 서두릅니다.', effects: { gdpGrowth: 0.4, treasury: -25, researchPoints: 5 } }, { id: 'research', label: '추가 연구', description: '상용화는 늦어지지만 실패 위험을 줄입니다.', effects: { researchPoints: 12, approval: 1 } }] }
+  return null
+}
+
+export function applyEventEffect(country: Country, effect: EventEffect): Country {
+  const political = country.politicalState
+  const social = country.socialState
+  return { ...country, treasury: Math.max(0, country.treasury + (effect.treasury ?? 0)), stability: clamp(country.stability + (effect.stability ?? 0)), gdpGrowth: country.gdpGrowth + (effect.gdpGrowth ?? 0), unemployment: Math.max(0, country.unemployment + (effect.unemployment ?? 0)), inflation: Math.max(0, country.inflation + (effect.inflation ?? 0)), politicalState: political ? { ...political, publicApproval: clamp(political.publicApproval + (effect.approval ?? 0)), politicalStability: clamp(political.politicalStability + (effect.stability ?? 0)) } : political, socialState: social ? { ...social, socialUnrest: clamp(social.socialUnrest + (effect.socialUnrest ?? 0)), governmentTrust: clamp(social.governmentTrust + (effect.approval ?? 0) * 0.5) } : social, researchState: country.researchState ? { ...country.researchState, researchPoints: country.researchState.researchPoints + (effect.researchPoints ?? 0) } : country.researchState }
+}
+
+export function createFollowUp(event: DynamicEvent, optionId: string, turn: number): DynamicEvent | null {
+  const option = event.options.find((item) => item.id === optionId)
+  if (!option?.followUp || event.chainDepth >= 3) return null
+  return { id: `${option.followUp.id}-${turn}`, title: option.followUp.title, description: option.followUp.description, category: option.followUp.category, importance: 2, cause: [event.title, `선택: ${option.label}`], options: [{ id: 'observe', label: '결과를 지켜본다', description: '상황을 관찰하고 다음 정책을 준비합니다.', effects: { approval: 1 } }], availableTurn: turn + option.followUp.delay, cooldown: 12, chainDepth: event.chainDepth + 1, scope: '국가' }
+}
+
+export function recordEvent(history: EventHistoryRecord[], event: DynamicEvent, countryId: string, result: string, turn: number) { return [{ id: `${event.id}-${turn}`, turn, countryId, title: event.title, category: event.category, cause: event.cause, result, importance: event.importance }, ...history].slice(0, 100) }

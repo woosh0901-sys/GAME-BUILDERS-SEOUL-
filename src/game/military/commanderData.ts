@@ -1,0 +1,2 @@
+import type { Commander, Country } from '../../types/game'
+export function createCommanders(countries: Country[]): Commander[] { return countries.map((country, index) => ({ id: `commander-${country.id}`, countryId: country.id, name: `${country.name} 사령관`, attack: 3 + index % 3, defense: 3 + (index + 1) % 3, planning: 2 + index % 4, logistics: 2 + (index + 2) % 4, command: 4 + index % 2, trait: index % 2 ? '방어 전문가' : '공세 전문가' })) }

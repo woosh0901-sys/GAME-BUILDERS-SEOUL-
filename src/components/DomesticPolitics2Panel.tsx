@@ -1,0 +1,9 @@
+import { useGameStore } from '../store/gameStore'
+import { normalizeDomesticPolitics2 } from '../game/politics/domesticPolitics2Engine'
+
+export function DomesticPolitics2Panel() {
+  const country = useGameStore((state) => state.countries.find((item) => item.id === state.playerCountryId))
+  if (!country) return null
+  const politics = normalizeDomesticPolitics2(country)
+  return <section className="panel domestic-politics2-panel"><div className="panel-title"><h2>국내정치 · 사회 압력</h2><span className="tag">정치자본 {politics.politicalCapital.toFixed(0)}</span></div><div className="domestic2-metrics"><span>불평등<b>{politics.inequalityIndex.toFixed(0)}</b></span><span>사회 이동성<b>{politics.socialMobility.toFixed(0)}</b></span><span>시민 참여<b>{politics.civicParticipation.toFixed(0)}</b></span><span>정당성<b>{politics.legitimacy.toFixed(0)}</b></span><span>정책 피로<b>{politics.policyFatigue.toFixed(0)}</b></span></div><div className="section-label">정책별 여론</div><div className="policy-opinion-grid">{Object.entries(politics.policyOpinion).map(([name, value]) => <span key={name}>{name}<b>{value.toFixed(0)}%</b></span>)}</div><div className="section-label">사회 갈등</div><div className="social-conflict-grid">{politics.socialConflicts.map((conflict) => <span key={conflict.id}>{conflict.name}<b>{conflict.intensity.toFixed(0)}</b></span>)}</div><div className="section-label">언론·로비</div><div className="media-lobby-row"><span>언론 신뢰도 <b>{(politics.media.reduce((sum, media) => sum + media.trust, 0) / Math.max(1, politics.media.length)).toFixed(0)}</b></span><span>노동계 영향력 <b>{politics.lobbying.find((lobby) => lobby.id === 'labor')?.influence.toFixed(0) ?? '0'}</b></span><span>산업계 영향력 <b>{politics.lobbying.find((lobby) => lobby.id === 'industry')?.influence.toFixed(0) ?? '0'}</b></span></div>{politics.news[0] && <p className="political-news">📰 {politics.news[0]}</p>}</section>
+}

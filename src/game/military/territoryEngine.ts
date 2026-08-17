@@ -1,0 +1,10 @@
+import type { Country, RegionState, ResourceProduction } from '../../types/game'
+
+const names: Record<string, string[]> = { han: ['수도권', '중부', '남부', '제주'], usa: ['동부', '중부', '서부', '알래스카'], china: ['화북', '화동', '중부', '서남', '동북', '남부'], japan: ['홋카이도', '혼슈', '시코쿠', '규슈'], russia: ['서부', '우랄', '시베리아', '극동', '남부'], germany: ['북부', '서부', '중부', '남부'], uk: ['잉글랜드', '스코틀랜드', '웨일스', '북아일랜드'], france: ['북부', '서부', '중부', '남부'], india: ['북부', '서부', '동부', '남부', '중부'], brazil: ['북부', '동부', '중부', '남부', '서부'] }
+
+export const createInitialTerritories = (countries: Country[]) => Object.fromEntries(countries.map((country) => {
+  const regionNames = names[country.id] ?? ['수도', '중부', '남부']
+  const baseResources: ResourceProduction = country.id === 'russia' ? { oil: 30, iron: 28, coal: 35, aluminum: 8, rareMaterials: 10, uranium: 2 } : country.id === 'usa' ? { oil: 25, iron: 24, coal: 25, aluminum: 12, rareMaterials: 8, uranium: 1 } : country.id === 'china' ? { oil: 8, iron: 22, coal: 38, aluminum: 10, rareMaterials: 18, uranium: 2 } : country.id === 'brazil' ? { oil: 15, iron: 24, coal: 10, aluminum: 14, rareMaterials: 12, uranium: 1 } : { oil: 5, iron: 12, coal: 10, aluminum: 6, rareMaterials: 5, uranium: 1 }
+  const regions: RegionState[] = regionNames.map((name, index) => ({ id: `${country.id}-${index}`, name, capital: index === 0, originalOwner: country.id, ownerCountryId: country.id, population: Math.max(2, country.population / regionNames.length * (index === 0 ? 1.25 : 0.97)), development: index === 0 ? 72 : 42 + index * 3, infrastructure: index === 0 ? 70 : 40 + index * 2, industrialCapacity: index === 0 ? 22 : 8, civilianFactories: index === 0 ? 3 : 1, militaryFactories: index === 0 ? 2 : 0, researchFacilities: index === 0 ? 1 : 0, resourceProduction: index === 0 ? baseResources : { oil: 0, iron: 0, coal: 0, aluminum: 0, rareMaterials: 0, uranium: 0 }, buildings: index === 0 ? [{ id: 'civilian_factory', level: 3 }, { id: 'research_lab', level: 1 }] : [], isBorderRegion: index > 0, infrastructureDamage: 0 }))
+  return [country.id, regions]
+}))
