@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#18201f" />
+    <meta name="description" content="가상의 산업 도시를 연결하고 AI 기업가와 경쟁하는 1인용 경제 보드게임" />
+    <title>증기와 장부</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="grain" aria-hidden="true"></div>
+
+    <main class="game-shell">
+      <header class="topbar">
+        <div class="brand">
+          <div class="brand-seal" aria-hidden="true"><span>SL</span></div>
+          <div>
+            <p>THE ARDEL INDUSTRIAL AGE</p>
+            <h1>증기와 장부</h1>
+          </div>
+        </div>
+
+        <div class="era-display">
+          <span id="era-label">수로기</span>
+          <strong><b id="round-value">1</b> / 10 라운드</strong>
+          <div class="era-track" aria-hidden="true"><i id="era-progress"></i></div>
+        </div>
+
+        <div class="player-economy" aria-label="내 기업 현황">
+          <button class="economy-item" data-help="cash" type="button">
+            <span>현금</span><strong>₡ <b id="cash-value">0</b></strong>
+          </button>
+          <button class="economy-item" data-help="income" type="button">
+            <span>수입</span><strong>+<b id="income-value">0</b></strong>
+          </button>
+          <button class="economy-item fame" data-help="fame" type="button">
+            <span>명성</span><strong>★ <b id="fame-value">0</b></strong>
+          </button>
+          <div class="economy-item actions">
+            <span>남은 행동</span><strong><b id="actions-value">1</b> / <b id="action-limit">1</b></strong>
+          </div>
+        </div>
+      </header>
+
+      <section id="context-help" class="context-help" hidden>
+        <div class="context-help-icon" id="context-help-icon">₡</div>
+        <div>
+          <span>장부 도움말</span>
+          <strong id="context-help-title">현금</strong>
+          <p id="context-help-text"></p>
+        </div>
+        <button id="context-help-close" type="button" aria-label="도움말 닫기">×</button>
+      </section>
+
+      <section class="table-layout">
+        <aside class="side-panel company-panel">
+          <div class="panel-heading">
+            <span>01</span>
+            <div><p>COMPANY LEDGER</p><h2>기업 순위</h2></div>
+          </div>
+
+          <div id="standings" class="standings"></div>
+
+          <section class="ai-desk">
+            <div class="ai-desk-title">
+              <span class="signal-dot"></span>
+              <div><small>경쟁사 동향</small><strong id="ai-status-title">시장 조사 중</strong></div>
+            </div>
+            <p id="ai-status-detail">두 경쟁사가 다음 투자를 검토하고 있습니다.</p>
+          </section>
+
+          <section id="tutorial-card" class="tutorial-card">
+            <span>초보 이사회 안내</span>
+            <strong id="tutorial-title">첫 산업을 세우세요</strong>
+            <p id="tutorial-text">중앙 지도에서 도시를 고른 뒤, 오른쪽에서 건설할 산업을 선택하세요.</p>
+          </section>
+
+          <button id="advance-turn" class="primary-button advance-button" type="button">
+            <span id="advance-turn-label">행동을 마치고 AI 턴 진행</span>
+            <small id="advance-turn-hint">행동을 남기고 종료할 수도 있습니다</small>
+          </button>
+          <button id="rules-button" class="quiet-button rules-shortcut" type="button">규칙서 다시 보기</button>
+          <button id="new-game" class="quiet-button" type="button">새 게임</button>
+        </aside>
+
+        <section class="board-column">
+          <nav class="action-bar" aria-label="기업 행동">
+            <button class="action-tab selected" data-mode="build" type="button"><i>⌂</i><span><strong>산업 건설</strong><small>카드와 부지 일치</small></span></button>
+            <button class="action-tab" data-mode="link" type="button"><i>⌁</i><span><strong>운송로</strong><small>수로 또는 철도</small></span></button>
+            <button class="action-tab" data-mode="sell" type="button"><i>◇</i><span><strong>상품 판매</strong><small>항구와 화물 필요</small></span></button>
+            <button class="action-tab" data-mode="develop" type="button"><i>⚙</i><span><strong>기술 개발</strong><small>기계로 타일 제거</small></span></button>
+            <button class="action-tab" data-mode="finance" type="button"><i>₡</i><span><strong>대출</strong><small>₡18 · 수입 -3</small></span></button>
+            <button class="action-tab" data-mode="scout" type="button"><i>◈</i><span><strong>정찰</strong><small>3장 → 만능 2장</small></span></button>
+          </nav>
+
+          <div class="board-header">
+            <div>
+              <p>INDUSTRIAL DISTRICT OF ARDEL</p>
+              <h2>아르델 공업지대</h2>
+            </div>
+            <div class="board-tools">
+              <div class="map-legend">
+                <span><i class="human"></i>나</span>
+                <span><i class="morrow"></i>메로우</span>
+                <span><i class="aurel"></i>오렐</span>
+              </div>
+              <button id="inspector-toggle" class="panel-toggle" type="button" aria-expanded="false" aria-controls="inspector-panel"><span>투자 사무실</span> <b>열기</b></button>
+            </div>
+          </div>
+
+          <div id="map-board" class="map-board">
+            <svg id="route-layer" class="route-layer" viewBox="0 0 1000 650" preserveAspectRatio="none" aria-label="도시 운송망"></svg>
+            <div id="city-layer" class="city-layer"></div>
+            <div class="map-title map-title-one">서부 수로</div>
+            <div class="map-title map-title-two">노바만</div>
+            <div class="compass" aria-hidden="true"><span>N</span><b>✦</b></div>
+          </div>
+
+          <div id="mode-prompt" class="mode-prompt">
+            <span class="prompt-icon">⌂</span>
+            <div><strong>산업 건설</strong><p>지도에서 도시를 선택하면 건설 가능한 산업과 비용이 표시됩니다.</p></div>
+          </div>
+
+          <section class="hand-board" aria-label="내 손패">
+            <header class="hand-heading">
+              <div><span>내 손패</span><small>행동 전에 버릴 카드 1장을 선택하세요</small></div>
+              <div><b><span id="hand-count">8</span>장</b><small>덱 <span id="deck-count">3</span>장</small></div>
+            </header>
+            <div id="hand-list" class="hand-list"></div>
+          </section>
+
+          <section class="market-board">
+            <div class="market-heading">
+              <span>공동 거래소</span>
+              <small>누구나 연결된 자원을 사용할 수 있습니다</small>
+            </div>
+            <div class="market-resource fuel-market" data-help="fuel">
+              <i>●</i><div><span>공용 연료</span><strong id="fuel-total">0</strong><small id="fuel-sources">시장 구매 ₡3</small></div>
+            </div>
+            <div class="market-resource machine-market" data-help="machine">
+              <i>◆</i><div><span>공용 기계</span><strong id="machine-total">0</strong><small id="machine-sources">시장 구매 ₡3</small></div>
+            </div>
+            <div class="market-resource cargo-market" data-help="cargo">
+              <i>▣</i><div><span>화물 허가</span><strong id="cargo-total">3</strong><small id="cargo-sources">항구 무료 3</small></div>
+            </div>
+            <div class="contracts">
+              <span>공개 계약</span>
+              <div id="contract-list" class="contract-list"></div>
+            </div>
+          </section>
+        </section>
+
+        <aside id="inspector-panel" class="side-panel inspector-panel collapsed" aria-label="투자 사무실">
+          <div class="panel-heading">
+            <span>02</span>
+            <div><p>ACTION OFFICE</p><h2>투자 사무실</h2></div>
+            <button id="close-inspector" class="panel-close" type="button" aria-label="투자 사무실 닫기">×</button>
+          </div>
+
+          <div id="inspector-content" class="inspector-content"></div>
+
+          <section class="technology-card">
+            <div class="technology-heading"><span>내 산업 기술</span><small>최대 3단계</small></div>
+            <div id="technology-list" class="technology-list"></div>
+          </section>
+        </aside>
+      </section>
+
+      <section id="history-strip" class="history-strip collapsed">
+        <button id="history-toggle" class="history-title" type="button" aria-expanded="false" aria-controls="history-list"><span>산업 연보</span><small>최근 기록 펼치기 ↓</small></button>
+        <div id="history-list" class="history-list"></div>
+      </section>
+    </main>
+
+    <div id="start-modal" class="modal-backdrop">
+      <section class="modal start-modal" role="dialog" aria-modal="true" aria-labelledby="game-title">
+        <div id="start-menu-view">
+          <div class="start-emblem" aria-hidden="true"><span>⚙</span></div>
+          <p class="modal-kicker">A SOLO INDUSTRIAL BOARD GAME</p>
+          <h2 id="game-title">증기와 장부</h2>
+          <p class="modal-lead">카드로 산업을 세우고, 공동 자원을 빌려 쓰며, 두 시대의 운송망을 결산하십시오. AI 두 회사보다 높은 명성을 남기면 승리합니다.</p>
+
+          <div class="core-loop">
+            <span><b>1</b> 산업을 건설하고</span><span><b>2</b> 도시를 연결해</span><span><b>3</b> 상품을 판매하세요</span>
+          </div>
+
+          <div class="start-menu-actions">
+            <button id="open-setup" class="menu-choice primary-choice" type="button">
+              <i aria-hidden="true">▶</i><span><strong>게임 시작</strong><small>창업 헌장을 선택하고 새 장부를 엽니다</small></span>
+            </button>
+            <button id="open-rulebook" class="menu-choice rule-choice" type="button">
+              <i aria-hidden="true">▤</i><span><strong>규칙서 보기</strong><small>카드·턴 순서·두 시대 결산까지 8쪽</small></span>
+            </button>
+          </div>
+
+          <button id="continue-game" class="continue-button" type="button" hidden>저장된 장부 이어보기 <span>→</span></button>
+          <p class="first-game-note"><span>처음 플레이하시나요?</span> 규칙서 1~3쪽과 6쪽을 먼저 읽으면 첫 턴을 진행할 수 있습니다.</p>
+        </div>
+
+        <div id="setup-view" class="setup-view" hidden>
+          <button id="back-to-menu" class="modal-back-button" type="button">← 첫 화면</button>
+          <p class="modal-kicker">FOUNDING CHARTER</p>
+          <h2>창업 헌장</h2>
+          <p class="modal-lead">플레이 방식에 맞는 시작 보너스를 하나 선택하세요. 게임 규칙은 동일합니다.</p>
+
+          <fieldset class="charter-picker">
+            <legend>청람 산업사의 전문 분야</legend>
+            <label class="charter-option selected">
+              <input type="radio" name="charter" value="engineer" checked />
+              <i>⚙</i><span><strong>기술자 조합</strong><small>기계 기술 2단계로 시작</small></span>
+            </label>
+            <label class="charter-option">
+              <input type="radio" name="charter" value="merchant" />
+              <i>₡</i><span><strong>상인 연합</strong><small>현금 ₡6 추가</small></span>
+            </label>
+            <label class="charter-option">
+              <input type="radio" name="charter" value="navigator" />
+              <i>⌁</i><span><strong>수로 측량단</strong><small>첫 운송로 무료</small></span>
+            </label>
+          </fieldset>
+
+          <button id="start-game" class="primary-button setup-start-button" type="button">이 헌장으로 시작</button>
+        </div>
+      </section>
+    </div>
+
+    <div id="rulebook-modal" class="modal-backdrop" hidden>
+      <section class="modal rulebook-modal" role="dialog" aria-modal="true" aria-labelledby="rulebook-title">
+        <header class="rulebook-header">
+          <div>
+            <p class="modal-kicker">THE INDUSTRIALIST'S HANDBOOK</p>
+            <h2 id="rulebook-title">기업가 규칙서</h2>
+          </div>
+          <button id="close-rulebook" type="button" aria-label="규칙서 닫기">×</button>
+        </header>
+
+        <nav id="rulebook-tabs" class="rulebook-tabs" aria-label="규칙서 목차"></nav>
+        <article id="rulebook-page" class="rulebook-page"></article>
+
+        <footer class="rulebook-footer">
+          <button id="rule-prev" type="button">← 이전</button>
+          <div><span id="rule-page-number">1 / 8</span><div id="rule-progress" class="rule-progress"><i id="rule-progress-fill"></i></div></div>
+          <button id="rule-next" type="button">다음 →</button>
+        </footer>
+        <button id="rulebook-start" class="primary-button rulebook-start" type="button" hidden>이제 게임 시작하기</button>
+      </section>
+    </div>
+
+    <div id="result-modal" class="modal-backdrop" hidden>
+      <section class="modal result-modal" role="dialog" aria-modal="true" aria-labelledby="result-title">
+        <p class="modal-kicker">THE FINAL LEDGER</p>
+        <div id="result-emblem" class="result-emblem">★</div>
+        <h2 id="result-title">최종 결산</h2>
+        <p id="result-description" class="modal-lead"></p>
+        <div id="final-ranking" class="final-ranking"></div>
+        <blockquote id="result-quote"></blockquote>
+        <button id="restart-game" class="primary-button" type="button">새 장부 펼치기</button>
+      </section>
+    </div>
+
+    <div id="toast-stack" class="toast-stack" aria-live="assertive"></div>
+    <script src="game.js"></script>
+  </body>
+</html>
